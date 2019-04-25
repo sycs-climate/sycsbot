@@ -6,6 +6,7 @@ from slackclient import SlackClient
 
 with open('oauthtoken.txt', 'r') as f:
     token = f.read().strip()
+    f.close()
 
 slack_client = SlackClient(token)
 starterbot_id = None
@@ -78,7 +79,7 @@ def get_channel(channel_name):
 
 if __name__ == "__main__":
     if slack_client.rtm_connect(with_team_state=False):
-        print("Starter Bot connected and running!")
+        print("SYCS Bot connected and running!")
         # Read bot's user ID by calling Web API method `auth.test`
         starterbot_id = slack_client.api_call("auth.test")["user_id"]
         while True:
