@@ -57,13 +57,12 @@ def handle_command(command, channel, user):
         if not get_user_info(user)['is_admin']:
             response = '<@' + user + '> ' + 'Sorry, only workspace administrators can use !poweroff.'
         else:
-            sys.exit(0)
+            os.system('killall python sycsbot.py & killall python /home/sbneelu/sycsbot/sycsbot.py')
     elif command[0] == 'restart':
         if not get_user_info(user)['is_admin']:
             response = '<@' + user + '> ' + 'Sorry, only workspace administrators can use !poweroff.'
         else:
-            os.system('python /home/sbneelu/sycsbot/main.py &')
-            sys.exit(0)
+            os.system('python /home/sbneelu/sycsbot/sycsbot.py & killall python sycsbot.py & killall python /home/sbneelu/sycsbot/sycsbot.py')
     # elif command[0] == 'getchannel':
     #     response = '<@' + user + '> ' + get_channel(command[1]) or '<@' + user + '> ' + 'Channel not set up yet. Use !setup channel <channel name> in the channel to set it up.'
 
