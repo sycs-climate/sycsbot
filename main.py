@@ -2,6 +2,7 @@ import os
 import time
 import re
 import json
+import sys
 from slackclient import SlackClient
 
 with open('oauthtoken.txt', 'r') as f:
@@ -22,7 +23,6 @@ def parse_bot_commands(slack_events):
     """
     for event in slack_events:
         if event["type"] == "message" and not "subtype" in event:
-            print event['text']
             if event['text'].strip().startswith('!'):
                 handle_command(event['text'].strip()[1:], event["channel"], event['user'])
         elif event['type'] == 'team_join':
@@ -53,7 +53,17 @@ def handle_command(command, channel, user):
                     f.write(json.dumps(fc))
                     f.close()
                 response = '<@' + user + '> ' + 'Successfully set ' + command[2] + ' to channel <#' + channel + '>.'
-
+    elif command[0] == 'stop':
+        if not get_user_info(user)['is_admin']:
+            response = '<@' + user + '> ' + 'Sorry, only workspace administrators can use !poweroff.'
+        else:
+            sys.exit(0)
+    elif command[0] == 'restart':
+        if not get_user_info(user)['is_admin']:
+            response = '<@' + user + '> ' + 'Sorry, only workspace administrators can use !poweroff.'
+        else:
+            os.system('python /home/sbneelu/sycsbot/main.py &')
+            sys.exit(0)
     # elif command[0] == 'getchannel':
     #     response = '<@' + user + '> ' + get_channel(command[1]) or '<@' + user + '> ' + 'Channel not set up yet. Use !setup channel <channel name> in the channel to set it up.'
 
@@ -90,7 +100,10 @@ if __name__ == "__main__":
         # Read bot's user ID by calling Web API method `auth.test`
         starterbot_id = slack_client.api_call("auth.test")["user_id"]
         while True:
-            parse_bot_commands(slack_client.rtm_read())
-            time.sleep(RTM_READ_DELAY)
+            try:
+                parse_bot_commands(slack_client.rtm_read())
+                time.sleep(RTM_READ_DELAY)
+            except:
+                pass
     else:
         print("Connection failed. Exception traceback printed above.")
