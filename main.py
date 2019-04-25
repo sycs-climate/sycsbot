@@ -13,6 +13,7 @@ starterbot_id = None
 
 RTM_READ_DELAY = 0.5
 
+
 def parse_bot_commands(slack_events):
     """
         Parses a list of events coming from the Slack RTM API to find bot commands.
@@ -21,8 +22,13 @@ def parse_bot_commands(slack_events):
     """
     for event in slack_events:
         if event["type"] == "message" and not "subtype" in event:
+            print event['text']
             if event['text'].strip().startswith('!'):
                 handle_command(event['text'].strip()[1:], event["channel"], event['user'])
+        elif event['type'] == 'team_join':
+            user = event['user']
+            welcome_message = '<@' + user['id'] + '> Welcome to SYCS, ' + user['real_name'] + '! \n\nThank you for joining the SYCS Slack workspace. Please make sure to join the channels for any teams you would like to join. Please use the <#' + get_channel('ask-a-question') + '> channel if you have any questions.'
+            post_message(welcome_message, user['id'])
 
 
 def handle_command(command, channel, user):
@@ -36,7 +42,7 @@ def handle_command(command, channel, user):
 
     if command[0] == 'setup':
         if not get_user_info(user)['is_admin']:
-            response = 'Sorry, only workspace administrators can use !setup commands.'
+            response = '<@' + user + '> ' + 'Sorry, only workspace administrators can use !setup commands.'
         else:
             if command[1].lower() == 'channel':
                 with open('channels.json', 'r') as f:
@@ -46,15 +52,16 @@ def handle_command(command, channel, user):
                 with open('channels.json', 'w') as f:
                     f.write(json.dumps(fc))
                     f.close()
-                response = 'Successfully set #' + command[2].lower() + ' to channel ' + channel.lower() + '.'
+                response = '<@' + user + '> ' + 'Successfully set ' + command[2] + ' to channel <#' + channel + '>.'
 
-    elif command[0] == 'getchannel':
-        response = get_channel(command[1]) or 'Channel not set up yet. Use !setup channel <channel name> in the channel to set it up.'
+    # elif command[0] == 'getchannel':
+    #     response = '<@' + user + '> ' + get_channel(command[1]) or '<@' + user + '> ' + 'Channel not set up yet. Use !setup channel <channel name> in the channel to set it up.'
 
     else:
-        response = default_response
+        response = '<@' + user + '> ' + default_response
 
     post_message(response, channel)
+
 
 def post_message(message, channel):
     slack_client.api_call(
@@ -74,7 +81,7 @@ def get_channel(channel_name):
         fc = json.loads(f.read())
         f.close()
     if channel_name in fc:
-        return fc[channel_name]
+        return fc[channel_name].upper()
     return None
 
 if __name__ == "__main__":
