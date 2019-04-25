@@ -58,6 +58,7 @@ def handle_command(command, channel, user):
             response = '<@' + user + '> ' + 'Sorry, only workspace administrators can use !stop.'
         else:
             response = '<@' + user + '> ' + 'Stopping SYCS bot...'
+            post_message(response, channel)
             os.system('killall python sycsbot.py & killall python /home/sbneelu/sycsbot/sycsbot.py')
     # elif command[0] == 'getchannel':
     #     response = '<@' + user + '> ' + get_channel(command[1]) or '<@' + user + '> ' + 'Channel not set up yet. Use !setup channel <channel name> in the channel to set it up.'
