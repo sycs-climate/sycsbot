@@ -31,6 +31,54 @@ def parse_bot_commands(slack_events):
             post_message(welcome_message, user['id'])
 
 
+commands = {}
+
+def register_command(keyword, func):
+    if keyword in commands:
+        print(f"WARNING: Chat expression {keyword} already registered to {commands[keyword].__name__}. Re-registering to {func.__name__}")
+
+    commands[keyword] = func
+
+def command(keyword):
+    def decorator(func):
+        register_command(keyword, func)
+        return func
+    return decorator
+
+@command('setup')
+def setup(command, channel, user):
+    if not get_user_info(user)['is_admin']:
+        response = '<@' + user + '> ' + 'Sorry, only workspace administrators can use !setup commands.'
+    else:
+        if command[1].lower() == 'channel':
+            with open('channels.json', 'r') as f:
+                fc = json.loads(f.read())
+                f.close()
+            fc[command[2].lower()] = channel.lower()
+            with open('channels.json', 'w') as f:
+                f.write(json.dumps(fc))
+                f.close()
+            response = '<@' + user + '> ' + 'Successfully set ' + command[2] + ' to channel <#' + channel + '>.'
+
+    return response
+
+@command('stop')
+def stop(command, channel, user):
+    if not get_user_info(user)['is_admin']:
+        response = '<@' + user + '> ' + 'Sorry, only workspace administrators can use !stop.'
+    else:
+        response = '<@' + user + '> ' + 'Stopping SYCS bot...'
+        post_message(response, channel)
+        os.system('killall python sycsbot.py & killall python /home/sbneelu/sycsbot/sycsbot.py') # This is very bad, use sys.exit()
+
+    return response
+
+
+@command('getchannel'):
+def getchannel(command, channel, user):
+    #response = '<@' + user + '> ' + get_channel(command[1]) or '<@' + user + '> ' + 'Channel not set up yet. Use !setup channel <channel name> in the channel to set it up.'
+    return None
+
 def handle_command(command, channel, user):
     """
         Executes bot command if the command is known
@@ -40,34 +88,13 @@ def handle_command(command, channel, user):
     command = command.split()
     command[0] = command[0].lower()
 
-    if command[0] == 'setup':
-        if not get_user_info(user)['is_admin']:
-            response = '<@' + user + '> ' + 'Sorry, only workspace administrators can use !setup commands.'
-        else:
-            if command[1].lower() == 'channel':
-                with open('channels.json', 'r') as f:
-                    fc = json.loads(f.read())
-                    f.close()
-                fc[command[2].lower()] = channel.lower()
-                with open('channels.json', 'w') as f:
-                    f.write(json.dumps(fc))
-                    f.close()
-                response = '<@' + user + '> ' + 'Successfully set ' + command[2] + ' to channel <#' + channel + '>.'
-    elif command[0] == 'stop':
-        if not get_user_info(user)['is_admin']:
-            response = '<@' + user + '> ' + 'Sorry, only workspace administrators can use !stop.'
-        else:
-            response = '<@' + user + '> ' + 'Stopping SYCS bot...'
-            post_message(response, channel)
-            os.system('killall python sycsbot.py & killall python /home/sbneelu/sycsbot/sycsbot.py')
-    # elif command[0] == 'getchannel':
-    #     response = '<@' + user + '> ' + get_channel(command[1]) or '<@' + user + '> ' + 'Channel not set up yet. Use !setup channel <channel name> in the channel to set it up.'
-
-    else:
+    if(command[0] in commands):
+        response = commands[command[0]](command, channel, user)
+        
+    if response == None:
         response = '<@' + user + '> ' + default_response
 
     post_message(response, channel)
-
 
 def post_message(message, channel):
     slack_client.api_call(
