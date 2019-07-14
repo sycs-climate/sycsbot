@@ -1,4 +1,4 @@
-import json,sys
+import json,argparse
 from slackbot import SlackBot
 
 with open('oauthtoken.txt', 'r') as f:
@@ -27,9 +27,8 @@ def setup(message):
 @SYCSBot.require_admin
 def stop(message):
     response = '<@' + message['user'] + '> ' + 'Stopping SYCS bot...'
-    post_message(response, message['channel'])
-    sys.exit()
-    return ""
+    SYCSBot.post_message(response, message['channel'])
+    raise SystemExit("Bot killed by admin.")
 
 @SYCSBot.command('getchannel')
 def getchannel(message):
@@ -54,6 +53,26 @@ def ping(message):
 @SYCSBot.require_admin
 def admintest(message):
     return "Admin only function executed"
+
+
+argtest_argparser = argparse.ArgumentParser(
+        prog="!argtest",
+        description="Test positional and keyword argument parsing and echo results.",
+        conflict_handler='resolve'
+    )
+argtest_argparser.add_argument('--foo',
+        help="Foo, optional keyword argument",
+        type=str
+    )
+argtest_argparser.add_argument('N',
+        help="Required positional argument",
+        type=int,
+        nargs=1
+    )
+@SYCSBot.command('argtest')
+@SYCSBot.command_args(argtest_argparser)
+def argtest(message, args):
+    return "`"+str(args)+"`"
 
 if __name__ == "__main__":
     SYCSBot.run()

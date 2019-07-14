@@ -1,4 +1,6 @@
-import slack,time
+import slack,time,io
+
+from contextlib import redirect_stdout,redirect_stderr
 
 class SlackBot:
 
@@ -45,6 +47,35 @@ class SlackBot:
                 return func(message)
         return wrap
     
+    def command_args(self, parser):
+        """
+            Function decorator to more easily parse arguments.
+        
+            parser: Some argument parsing object (argparse.ArgumentParser)
+                    which has child function parse_args, returning a dict
+                    of named arguments.
+        """
+        def makeWrapper(func):
+ 
+            def wrapper(message):
+                args = message['text'].split(" ")[1:]
+                with io.StringIO() as buf, redirect_stdout(buf), redirect_stderr(buf):
+                    try:
+                        args = vars(parser.parse_args(args))
+                        output = buf.getvalue()
+                        if len(output):
+                            bot.say_in_channel(f"```{output}```", message['channel'])
+                    except SystemExit:
+                        output = buf.getvalue()
+                        if len(output):
+                            self.post_message(f"```{output}```", message['channel'])
+                        return
+                return func(message, args)
+
+            return wrapper
+                
+        return makeWrapper 
+
     def handle_message(self, **payload):
         """
             Executes bot command if the command is known
@@ -64,10 +95,11 @@ class SlackBot:
 
         if(command[0] in self.commands):
             response = self.commands[command[0]](payload['data'])
-            
-        if response == None:
+        else:
             response = '<@' + user + '> ' + default_response
-
+    
+        if response == None: return
+        
         self.post_message(response, channel)
 
     def setup_bot_events(self):
