@@ -1,4 +1,4 @@
-import slack,time,argparse,io
+import slack,time,io
 
 from contextlib import redirect_stdout,redirect_stderr
 
@@ -47,27 +47,16 @@ class SlackBot:
                 return func(message)
         return wrap
     
-    def command_args(self, description, **kwargs):
+    def command_args(self, parser):
         """
-            Function decorator to easily accept positional and keyword arguments
-            in commands.
+            Function decorator to more easily parse arguments.
         
-            description:    Brief summary of command's purpose.
-            name:           The name argparser will use when showing help messages.
-            **kwargs:
-                Keys:       Name for an argument to be added
-                Values:     Dict with args for add_argument (https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument)
-                            (value['prefix'] to add '-' or '--' for optional args)
-
+            parser: Some argument parsing object (argparse.ArgumentParser)
+                    which has child function parse_args, returning a dict
+                    of named arguments.
         """
         def makeWrapper(func):
-
-            prog = kwargs.pop('name') if 'name' in kwargs else func.__name__
-            parser = argparse.ArgumentParser(description=description, conflict_handler='resolve', prog=prog)
-            for k,v in kwargs.items(): # Add every kwarg as an argument with provided settings
-                parser.add_argument((v.pop('prefix') if 'prefix' in v else '') + k, **v)
-
-
+ 
             def wrapper(message):
                 args = message['text'].split(" ")[1:]
                 with io.StringIO() as buf, redirect_stdout(buf), redirect_stderr(buf):

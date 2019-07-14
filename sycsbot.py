@@ -1,4 +1,4 @@
-import json
+import json,argparse
 from slackbot import SlackBot
 
 with open('oauthtoken.txt', 'r') as f:
@@ -54,11 +54,23 @@ def ping(message):
 def admintest(message):
     return "Admin only function executed"
 
-@SYCSBot.command('argtest')
-@SYCSBot.command_args("Test positional and keyword arguments and echo them.", name="!argtest",
-        foo={'prefix':'--', 'help':"Foo, optional keyword argument", 'type':str},
-        N={'help':"Required positional argument", 'type':int, 'nargs':1}
+
+argtest_argparser = argparse.ArgumentParser(
+        prog="!argtest",
+        description="Test positional and keyword argument parsing and echo results.",
+        conflict_handler='resolve'
     )
+argtest_argparser.add_argument('--foo',
+        help="Foo, optional keyword argument",
+        type=str
+    )
+argtest_argparser.add_argument('N',
+        help="Required positional argument",
+        type=int,
+        nargs=1
+    )
+@SYCSBot.command('argtest')
+@SYCSBot.command_args(argtest_argparser)
 def argtest(message, args):
     return "`"+str(args)+"`"
 
